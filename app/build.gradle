@@ -3,6 +3,17 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// 覆盖安装原 app 的前提：必须用原版调试证书签名。
+// 证书位置由 local.properties 的 QUICKDOT_KEYSTORE 覆盖，缺省指向项目根的 debug.keystore。
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    // Properties.load(InputStream) 按 ISO-8859-1 解码，中文路径会变乱码，故显式用 UTF-8
+    localPropsFile.withInputStream { localProps.load(new InputStreamReader(it, 'UTF-8')) }
+}
+def keystoreFile = rootProject.file(
+        localProps.getProperty('QUICKDOT_KEYSTORE') ?: '../../debug.keystore')
+
 android {
     namespace 'com.study.quickdot'
     compileSdk 35
@@ -15,9 +26,22 @@ android {
         versionName "1.0"
     }
 
+    signingConfigs {
+        original {
+            storeFile keystoreFile
+            storePassword localProps.getProperty('QUICKDOT_STORE_PASSWORD') ?: 'android'
+            keyAlias localProps.getProperty('QUICKDOT_KEY_ALIAS') ?: 'androiddebugkey'
+            keyPassword localProps.getProperty('QUICKDOT_KEY_PASSWORD') ?: 'android'
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig signingConfigs.original
+        }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.original
         }
     }
     compileOptions {
