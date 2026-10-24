@@ -191,6 +191,10 @@ class MainActivity : AppCompatActivity() {
             stopService(Intent(this, OverlayService::class.java))
             tvStatus.text = "状态：已停止"
         }
+
+        findViewById<Button>(R.id.btnHistory).setOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
     }
 
     @Deprecated("Deprecated in Java")

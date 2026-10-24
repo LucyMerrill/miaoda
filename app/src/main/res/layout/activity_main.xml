@@ -191,6 +191,12 @@
             android:layout_height="wrap_content"
             android:text="停止悬浮球" />
 
+        <Button
+            android:id="@+id/btnHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="搜题历史" />
+
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"

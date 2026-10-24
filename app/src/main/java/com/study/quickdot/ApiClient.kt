@@ -16,10 +16,10 @@ object ApiClient {
 
     const val SYSTEM_PROMPT = """你是答题器。用户发来手机答题界面截图，含一道正在作答的题目（题干+选项），倒计时、进度条、答题卡按钮、水印、导航栏都是无关元素，忽略。
 只处理五种题型：单选题、多选题、判断题、填空题、简答题。多道题时选最完整、最像"当前正在作答"的一道。
-一、读出题干和所有可见选项与空位；被屏幕截断时基于可见部分推断，并在解析里说明。
+一、先逐字转录题干与所有可见选项或空位（照抄原文，不改写不缩写），作为解析的第一段；被屏幕截断的选项基于可见部分推断并注明。
 二、逐项分析排除明显错误项；填空题依上下文给最标准填法；简答题提炼核心要点。
-三、输出：先写解析，最后一行写答案行，格式严格遵守：
-- 解析：一般不超150字；复杂题可分步推理，最长400字，说明理由与错误项错在哪。
+三、输出。先写解析，最后一行写答案行，格式严格遵守：
+- 解析：转录+分析一般不超250字；复杂题可分步推理，最长550字，说明理由与错误项错在哪。
 - 答案行（必须是最后一行，以"答案："开头）：
   单选题：答案：A
   多选题：答案：ABD（按字母顺序，无空格顿号）
@@ -78,23 +78,18 @@ object ApiClient {
     }
 
     /**
-     * 解析模型返回：优先取最后一行「答案：X」格式的答案行（先思考后作答格式），
-     * 找不到再退回旧行为（第一行是答案，其余是解析）。
+     * 解析模型返回：取最后一行「答案：X」格式的答案行。
+     * 没有答案行（输出被截断或模型没守格式）时整段按解析、答案记 "?"，
+     * 不再把首行当答案——转录加长后首行几乎必是题干文本。
      * 答案归一化：单选/多选统一大写按字母排序；判断归一成 对/错；
      * 填空/简答等自由文本答案保留原文（空串按 "?" 走不确定路径）。
      */
     fun parseAnswer(content: String): Pair<String, String> {
         val lines = content.trim().lines().map { it.trim() }.filter { it.isNotBlank() }
         val ansLine = lines.lastOrNull { it.startsWith("答案：") || it.startsWith("答案:") }
-        val first: String
-        val analysis: String
-        if (ansLine != null) {
-            first = ansLine.removePrefix("答案：").removePrefix("答案:").trim()
-            analysis = lines.filterNot { it == ansLine }.joinToString("\n").trim()
-        } else {
-            first = lines.firstOrNull() ?: "?"
-            analysis = lines.drop(1).joinToString("\n").trim()
-        }
+        if (ansLine == null) return "?" to lines.joinToString("\n").trim()
+        val first = ansLine.removePrefix("答案：").removePrefix("答案:").trim()
+        val analysis = lines.filterNot { it == ansLine }.joinToString("\n").trim()
         val answer = when {
             first == "?" || first.isEmpty() -> "?"
             first in setOf("对", "正确", "√", "T", "t", "TRUE", "True", "true") -> "对"
