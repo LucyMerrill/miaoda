@@ -4,6 +4,8 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -528,11 +530,27 @@ class OverlayService : Service() {
             LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
         )
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        // v1.0.1：一键复制答案——只复制 lastAnswer 本身（如 A/ABD/对），不带解析
+        val btnCopy = TextView(this).apply {
+            text = "复制答案"
+            setTextColor(0xFF43A047.toInt())
+            textSize = 14f
+            setPadding(0, dp(10), dp(16), dp(6))
+        }
+        btnCopy.setOnClickListener {
+            if (lastAnswer.isEmpty() || lastAnswer == "?") {
+                toast("本题无确定答案，无法复制")
+            } else {
+                val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("答案", lastAnswer))
+                toast("答案已复制：$lastAnswer")
+            }
+        }
         val btnStitch = TextView(this).apply {
             text = "拼接下一屏"
             setTextColor(0xFF7E57C2.toInt())
             textSize = 14f
-            setPadding(0, dp(10), dp(16), dp(6))
+            setPadding(dp(16), dp(10), dp(16), dp(6))
         }
         btnStitch.setOnClickListener {
             val frame = lastFrameB64
@@ -574,6 +592,7 @@ class OverlayService : Service() {
             setPadding(dp(16), dp(10), 0, dp(6))
         }
         btnClose.setOnClickListener { hidePanel() }
+        row.addView(btnCopy)
         row.addView(btnStitch)
         row.addView(btnRetry)
         row.addView(btnSettings)
