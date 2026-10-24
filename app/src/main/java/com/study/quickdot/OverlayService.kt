@@ -66,6 +66,7 @@ class OverlayService : Service() {
         private const val DOUBLE_TAP_MS = 300L
         private const val MAX_IMAGE_WIDTH = 1600
         private const val MAX_FRAMES = 3
+        private const val DOT_MAX_LABEL = 6
     }
 
     enum class State { IDLE, ANSWER, UNCERTAIN, ERROR, WAITING }
@@ -459,11 +460,17 @@ class OverlayService : Service() {
         val (answer, analysis) = ApiClient.parseAnswer(content)
         lastAnswer = answer
         lastAnalysis = analysis.ifEmpty { "(模型未给出解析)" }
-        if (answer == "?") {
-            setUncertain(lastAnalysis)
-        } else {
-            setDotLabel(answer, State.ANSWER)
-            toast("$answer 已显示，点圆点看解析")
+        when {
+            answer == "?" -> setUncertain(lastAnalysis)
+            answer.length <= DOT_MAX_LABEL -> {
+                setDotLabel(answer, State.ANSWER)
+                toast("$answer 已显示，点圆点看解析")
+            }
+            else -> {
+                // 填空/简答等长答案圆点放不下，完整答案在解析面板里看和复制
+                setDotLabel("√", State.ANSWER)
+                toast("答案已出，点圆点看解析")
+            }
         }
     }
 
