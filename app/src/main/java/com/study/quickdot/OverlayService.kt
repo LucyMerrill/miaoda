@@ -535,7 +535,8 @@ class OverlayService : Service() {
             text = "复制答案"
             setTextColor(0xFF43A047.toInt())
             textSize = 14f
-            setPadding(0, dp(10), dp(16), dp(6))
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, dp(10), 0, dp(6))
         }
         btnCopy.setOnClickListener {
             if (lastAnswer.isEmpty() || lastAnswer == "?") {
@@ -550,7 +551,8 @@ class OverlayService : Service() {
             text = "拼接下一屏"
             setTextColor(0xFF7E57C2.toInt())
             textSize = 14f
-            setPadding(dp(16), dp(10), dp(16), dp(6))
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, dp(10), 0, dp(6))
         }
         btnStitch.setOnClickListener {
             val frame = lastFrameB64
@@ -569,34 +571,29 @@ class OverlayService : Service() {
             text = "再识一题"
             setTextColor(0xFF1E88E5.toInt())
             textSize = 14f
-            setPadding(dp(16), dp(10), dp(16), dp(6))
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, dp(10), 0, dp(6))
         }
         btnRetry.setOnClickListener {
             hidePanel()
             captureAndAnswer()
         }
-        val btnSettings = TextView(this).apply {
-            text = "设置"
-            setTextColor(0xFF1E88E5.toInt())
-            textSize = 14f
-            setPadding(dp(16), dp(10), dp(16), dp(6))
-        }
-        btnSettings.setOnClickListener {
-            hidePanel()
-            openSettings()
-        }
         val btnClose = TextView(this).apply {
             text = "关闭"
             setTextColor(0xFF888888.toInt())
             textSize = 14f
-            setPadding(dp(16), dp(10), 0, dp(6))
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, dp(10), 0, dp(6))
         }
         btnClose.setOnClickListener { hidePanel() }
-        row.addView(btnCopy)
-        row.addView(btnStitch)
-        row.addView(btnRetry)
-        row.addView(btnSettings)
-        row.addView(btnClose)
+        // 四按钮等宽铺满整行；「设置」已删——长按圆点即可进设置
+        fun addSpread(v: TextView) = row.addView(
+            v, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        )
+        addSpread(btnCopy)
+        addSpread(btnStitch)
+        addSpread(btnRetry)
+        addSpread(btnClose)
         card.addView(row)
 
         root.addView(
