@@ -1,0 +1,17 @@
+# 统一行尾：源码与文本文件一律 LF（仓库现状即 LF）。
+# Windows 上系统级 core.autocrlf 可能为 true，编辑器一旦把整份文件写成 CRLF，
+# diff 里就会出现「整篇改动」。以下规则让 git 在入库时自动归一为 LF。
+*.kt         text eol=lf
+*.kts        text eol=lf
+*.gradle     text eol=lf
+*.properties text eol=lf
+*.xml        text eol=lf
+*.md         text eol=lf
+*.yml        text eol=lf
+*.py         text eol=lf
+gradlew      text eol=lf
+
+# 二进制文件不做行尾转换
+*.jar binary
+*.jpg binary
+*.png binary
