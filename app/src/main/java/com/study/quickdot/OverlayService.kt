@@ -90,7 +90,6 @@ class OverlayService : Service() {
     private var lastAnswer = ""
     private var lastAnalysis = ""
     private var lastFrameB64: String? = null
-    private var lastHash = 0L
     private val pendingFrames = ArrayList<String>()
 
     private var downRawX = 0f
@@ -329,19 +328,6 @@ class OverlayService : Service() {
                 setUncertain("屏幕内容受保护或未捕获到画面（黑屏），无法识别题目")
                 return@postDelayed
             }
-            lastHash = HistoryStore.dHash(bmp)
-            if (!stitching) {
-                // 同一道题（截图感知哈希近似）直接复用历史答案，不调接口
-                val hit = HistoryStore.findByHash(HistoryStore.all(this), lastHash)
-                if (hit != null) {
-                    busy = false
-                    lastFrameB64 = frameToB64(bmp)
-                    lastAnswer = hit.answer
-                    lastAnalysis = hit.analysis
-                    showAnswer(hit.answer, hit.analysis, "历史命中，显示上次（${fmtTime(hit.time)}）的答案")
-                    return@postDelayed
-                }
-            }
             val b64 = frameToB64(bmp)
             lastFrameB64 = b64
             if (stitching) {
@@ -483,25 +469,24 @@ class OverlayService : Service() {
             question = analysis.lines().firstOrNull { it.isNotBlank() }?.take(80) ?: "",
             answer = answer,
             analysis = analysis,
-            model = ConfigStore.load(prefs).model.trim(),
-            hash = lastHash
+            model = ConfigStore.load(prefs).model.trim()
         ))
         showAnswer(answer, lastAnalysis)
     }
 
     /** 统一的答案展示：?→不确定；≤6 字直接上圆点；长答案圆点显 √（完整答案在解析面板） */
-    private fun showAnswer(answer: String, analysis: String, hitToast: String? = null) {
+    private fun showAnswer(answer: String, analysis: String) {
         when {
             answer == "?" -> setUncertain(analysis)
-            answer.length <= DOT_MAX_LABEL -> setDotLabel(answer, State.ANSWER)
-            else -> setDotLabel("√", State.ANSWER)
+            answer.length <= DOT_MAX_LABEL -> {
+                setDotLabel(answer, State.ANSWER)
+                toast("$answer 已显示，点圆点看解析")
+            }
+            else -> {
+                setDotLabel("√", State.ANSWER)
+                toast("答案已出，点圆点看解析")
+            }
         }
-        val msg = hitToast ?: when {
-            answer == "?" -> null
-            answer.length <= DOT_MAX_LABEL -> "$answer 已显示，点圆点看解析"
-            else -> "答案已出，点圆点看解析"
-        }
-        if (msg != null) toast(msg)
     }
 
     // ---------- 圆点状态 ----------
@@ -669,9 +654,6 @@ class OverlayService : Service() {
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
-
-    private fun fmtTime(t: Long): String =
-        java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.CHINA).format(java.util.Date(t))
 
     /** 圆点视图：圆/胶囊底 + 居中文字，颜色随状态变化 */
     inner class DotView(context: Context) : View(context) {

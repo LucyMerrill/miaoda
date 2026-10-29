@@ -62,7 +62,7 @@ class HistoryActivity : AppCompatActivity() {
         val records = HistoryStore.all(this)
         if (records.isEmpty()) {
             list.addView(TextView(this).apply {
-                text = "暂无记录。识屏作答后会自动留档（同题再搜直接秒显，不耗算力）。"
+                text = "暂无记录。识屏作答后会自动留档，点条目查看完整解析。"
                 textSize = 14f
                 setTextColor(0xFF888888.toInt())
                 setPadding(0, dp(24), 0, 0)
